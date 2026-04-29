@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSea OS | Quantum Student Identity</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Plus+Jakarta+Sans:wght@200;400;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* DEEPSEA OS DESIGN SYSTEM 
+           Colors: Midnight Navy, Neon Aqua, Emergency Crimson
+        */
+        :root {
+            --bg-void: #00040a;
+            --bg-deep: #000c1d;
+            --neon-aqua: #00f2ff;
+            --aqua-glow: rgba(0, 242, 255, 0.4);
+            --glass-core: rgba(255, 255, 255, 0.03);
+            --glass-edge: rgba(255, 255, 255, 0.1);
+            --error-glow: rgba(255, 62, 62, 0.3);
+            --text-main: #e0faff;
+            --font-tech: 'Space Grotesk', sans-serif;
+            --font-ui: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        * { box-sizing: border-box; cursor: none !important; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg-void);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            user-select: none;
+        }
+
+        /* --- QUANTUM BACKGROUND ENGINE --- */
+        #viewport-bg {
+            position: fixed; inset: 0; z-index: -1;
+            background: radial-gradient(circle at center, #001f3f 0%, var(--bg-void) 100%);
+        }
+
+        #particle-container { position: absolute; inset: 0; pointer-events: none; }
+
+        .sea-light {
+            position: absolute; top: -10%; left: 50%; width: 200%; height: 50%;
+            background: radial-gradient(ellipse at center, rgba(0, 242, 255, 0.05) 0%, transparent 70%);
+            transform: translateX(-50%); animation: lightSway 15s infinite ease-in-out;
+        }
+
+        @keyframes lightSway { 0%, 100% { transform: translateX(-52%) skewX(-5deg); } 50% { transform: translateX(-48%) skewX(5deg); } }
+
+        /* --- THE LIQUID CURSOR --- */
+        .cursor-p {
+            width: 8px; height: 8px; background: #fff; border-radius: 50%; position: fixed;
+            z-index: 99999; pointer-events: none; box-shadow: 0 0 15px #fff;
+        }
+        .cursor-r {
+            width: 40px; height: 40px; border: 1px solid var(--neon-aqua); border-radius: 50%;
+            position: fixed; z-index: 99998; pointer-events: none;
+            transition: transform 0.1s ease-out, width 0.3s, height 0.3s;
+            box-shadow: 0 0 20px var(--aqua-glow);
+        }
+
+        /* --- SIDEBAR: OS NAVIGATION --- */
+        .os-sidebar {
+            width: 350px; background: rgba(0,0,0,0.7); backdrop-filter: blur(50px);
+            border-right: 1px solid var(--glass-edge); display: flex; flex-direction: column;
+            padding: 50px 40px; position: relative; z-index: 100;
+        }
+
+        .os-brand { margin-bottom: 80px; }
+        .os-brand h2 { font-family: var(--font-tech); font-weight: 300; letter-spacing: 5px; color: var(--neon-aqua); font-size: 1.2rem; }
+        .os-brand p { font-size: 0.6rem; opacity: 0.5; text-transform: uppercase; margin-top: 5px; }
+
+        .nav-link {
+            padding: 20px 0; display: flex; align-items: center; gap: 15px;
+            color: rgba(255,255,255,0.2); transition: 0.5s; font-weight: 600; font-size: 0.85rem;
+        }
+        .nav-link .circle { width: 10px; height: 10px; border: 2px solid currentColor; border-radius: 50%; transition: 0.5s; }
+        .nav-link.active { color: var(--neon-aqua); transform: translateX(10px); }
+        .nav-link.active .circle { background: var(--neon-aqua); box-shadow: 0 0 10px var(--neon-aqua); }
+        .nav-link.done { color: #00ffaa; }
+
+        /* --- MAIN HUB --- */
+        .os-viewport { flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 60px; perspective: 2000px; }
+
+        .os-panel {
+            display: none; width: 100%; max-width: 650px; background: var(--glass-core);
+            border: 1px solid var(--glass-edge); border-radius: 40px; padding: 60px;
+            backdrop-filter: blur(30px); position: relative;
+            animation: panelEntrance 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .os-panel.active { display: block; }
+
+        @keyframes panelEntrance {
+            from { opacity: 0; transform: translateZ(-200px) translateY(50px) rotateX(10deg); }
+            to { opacity: 1; transform: translateZ(0) translateY(0) rotateX(0); }
+        }
+
+        .os-panel h1 { font-family: var(--font-tech); font-size: 2.2rem; margin-bottom: 10px; }
+        .step-info { color: var(--neon-aqua); font-size: 0.7rem; letter-spacing: 3px; font-weight: 800; margin-bottom: 40px; display: block; }
+
+        /* --- ADVANCED FORM UI --- */
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .field { position: relative; margin-bottom: 30px; }
+        .field label { display: block; font-size: 0.65rem; color: var(--neon-aqua); margin-bottom: 12px; text-transform: uppercase; font-weight: 800; }
+        
+        input, select {
+            width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-edge);
+            padding: 20px; border-radius: 15px; color: #fff; font-size: 1rem; transition: 0.3s;
+            font-family: var(--font-ui);
+        }
+        input:focus { outline: none; border-color: var(--neon-aqua); background: rgba(0, 242, 255, 0.05); box-shadow: 0 0 20px rgba(0, 242, 255, 0.1); }
+
+        /* Error States */
+        input.invalid { border-color: #ff3e3e; animation: glitchShake 0.4s; background: rgba(255, 62, 62, 0.05); }
+        @keyframes glitchShake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-5px); } 60% { transform: translateX(5px); } }
+
+        .btn-prime {
+            width: 100%; padding: 22px; border-radius: 20px; border: none;
+            background: var(--neon-aqua); color: var(--bg-deep); font-weight: 800;
+            font-size: 1rem; text-transform: uppercase; letter-spacing: 2px;
+            box-shadow: 0 10px 30px var(--aqua-glow); transition: 0.4s; margin-top: 20px;
+        }
+        .btn-prime:hover { transform: translateY(-5px) scale(1.02); filter: brightness(1.1); box-shadow: 0 20px 40px var(--neon-aqua); }
+
+        /* --- THE HOLOGRAM ID CARD --- */
+        #id-card {
+            background: linear-gradient(135deg, #001a33 0%, #00040a 100%);
+            border: 2px solid var(--neon-aqua); border-radius: 30px; padding: 40px;
+            position: relative; overflow: hidden; box-shadow: 0 0 50px var(--aqua-glow);
+        }
+        #id-card::before {
+            content: ""; position: absolute; inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0, 242, 255, 0.03) 2px);
+            pointer-events: none;
+        }
+        .scan-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background: var(--neon-aqua); opacity: 0.3; animation: scanning 4s infinite linear;
+        }
+        @keyframes scanning { from { top: 0; } to { top: 100%; } }
+
+        .id-pfp {
+            width: 100px; height: 100px; border: 1px solid var(--neon-aqua);
+            background: rgba(0, 242, 255, 0.1); border-radius: 20px;
+            display: flex; align-items: center; justify-content: center; font-size: 3rem;
+            color: var(--neon-aqua); text-shadow: 0 0 15px var(--neon-aqua);
+        }
+
+        /* --- RESPONSIVE MESH --- */
+        @media (max-width: 1000px) {
+            body { flex-direction: column; overflow-y: auto; }
+            .os-sidebar { width: 100%; height: auto; padding: 25px; border-right: none; border-bottom: 1px solid var(--glass-edge); }
+            .nav-link { display: none; }
+            .os-viewport { padding: 30px 15px; }
+            .field-row { grid-template-columns: 1fr; gap: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="cursor-p" id="cp"></div>
+    <div class="cursor-r" id="cr"></div>
+
+    <div id="viewport-bg">
+        <div class="sea-light"></div>
+        <div id="particle-container"></div>
+    </div>
+
+    <aside class="os-sidebar">
+        <div class="os-brand">
+            <h2>DEEPSEA.OS</h2>
+            <p>Identity Verification System v4.0.2</p>
+        </div>
+        <nav>
+            <div class="nav-link active" id="l1"><div class="circle"></div> 01. CORE IDENTITY</div>
+            <div class="nav-link" id="l2"><div class="circle"></div> 02. GEOGRAPHIC DATA</div>
+            <div class="nav-link" id="l3"><div class="circle"></div> 03. ACADEMIC PROTOCOL</div>
+            <div class="nav-link" id="l4"><div class="circle"></div> 04. LOGIC SYNC</div>
+            <div class="nav-link" id="l5"><div class="circle"></div> 05. ENCRYPTION</div>
+            <div class="nav-link" id="l6"><div class="circle"></div> 06. ISSUANCE</div>
+        </nav>
+    </aside>
+
+    <main class="os-viewport">
+        <section class="os-panel active" id="p1">
+            <span class="step-info">PHASE // 01</span>
+            <h1>Biological Data</h1>
+            <div class="field">
+                <label>Full Legal Name</label>
+                <input type="text" id="in-name" placeholder="John Doe" required minlength="3">
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label>Age</label>
+                    <input type="number" id="in-age" placeholder="18" required>
+                </div>
+                <div class="field">
+                    <label>Identity Gender</label>
+                    <select id="in-gender">
+                        <option>Alpha (Male)</option>
+                        <option>Beta (Female)</option>
+                        <option>Gamma (Non-Binary)</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn-prime" onclick="App.next(1, 2)">Sync Biometrics &rarr;</button>
+        </section>
+
+        <section class="os-panel" id="p2">
+            <span class="step-info">PHASE // 02</span>
+            <h1>Location Ping</h1>
+            <div class="field">
+                <label>Native City</label>
+                <input type="text" id="in-city" placeholder="E.g. Atlantis" required>
+            </div>
+            <div class="field">
+                <label>Current Province/State</label>
+                <input type="text" id="in-state" placeholder="E.g. Deep Basin" required>
+            </div>
+            <button class="btn-prime" onclick="App.next(2, 3)">Log Geography &rarr;</button>
+        </section>
+
+        <section class="os-panel" id="p3">
+            <span class="step-info">PHASE // 03</span>
+            <h1>Registry Details</h1>
+            <div class="field">
+                <label>Institutional Email</label>
+                <input type="email" id="in-email" placeholder="student@deepsea.io" required>
+            </div>
+            <div class="field">
+                <label>Specialization Sector</label>
+                <select id="in-dept">
+                    <option>Neural Network Engineering</option>
+                    <option>Quantum Fluid Dynamics</option>
+                    <option>Bioluminescent Optics</option>
+                    <option>Artficial Inteligence</option>
+                </select>
+            </div>
+            <button class="btn-prime" onclick="App.next(3, 4)">Validate Academic &rarr;</button>
+        </section>
+
+        <section class="os-panel" id="p4">
+            <span class="step-info">PHASE // 04</span>
+            <h1>Encryption Key</h1>
+            <div class="field">
+                <label>Access Vault Password</label>
+                <input type="password" id="in-pass" placeholder="••••••••" required minlength="8">
+            </div>
+            <button class="btn-prime" onclick="App.next(4, 5)">Secure Layer &rarr;</button>
+        </section>
+
+        <section class="os-panel" id="p5">
+            <span class="step-info">PHASE // 05</span>
+            <h1>Logic Verification</h1>
+            <div class="field" style="text-align: center;">
+                <label style="font-size: 1.5rem; margin-bottom: 20px;">Compute: (15 &times; 2) + 10</label>
+                <input type="number" id="in-quiz" placeholder="Solution" required>
+            </div>
+            <button class="btn-prime" onclick="App.verifyQuiz()">Decrypt Identity</button>
+        </section>
+
+        <section class="os-panel" id="p6">
+            <span class="step-info">FINAL PHASE</span>
+            <h1>Quantum ID Issued</h1>
+            
+            <div id="id-card">
+                <div class="scan-line"></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                    <div class="id-pfp" id="id-char">?</div>
+                    <div style="text-align: right;">
+                        <p style="color: var(--neon-aqua); font-size: 0.6rem; letter-spacing: 2px;">SECURE ACCESS PASS</p>
+                        <h3 style="font-family: var(--font-tech);">#DS-9902</h3>
+                    </div>
+                </div>
+                <h2 id="res-name" style="font-size: 2.2rem; margin: 0;">User Name</h2>
+                <p id="res-dept" style="color: var(--neon-aqua); font-weight: 800; margin-bottom: 20px;">Department</p>
+                
+                <div class="field-row" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; font-size: 0.7rem;">
+                    <div>CITY: <span id="res-city" style="color: #fff; font-weight: 800;">---</span></div>
+                    <div>AGE: <span id="res-age" style="color: #fff; font-weight: 800;">---</span></div>
+                </div>
+            </div>
+
+            <button class="btn-prime" onclick="App.download()">Download Fragment (.PDF)</button>
+        </section>
+    </main>
+
+    <script>
+        /**
+         * DEEPSEA CORE ENGINE
+         * Manages cursor, particles, navigation and PDF rendering
+         */
+        const App = {
+            data: {},
+
+            init() {
+                this.bindCursor();
+                this.spawnParticles();
+                window.addEventListener('resize', () => this.spawnParticles());
+            },
+
+            bindCursor() {
+                const cp = document.getElementById('cp');
+                const cr = document.getElementById('cr');
+                document.addEventListener('mousemove', (e) => {
+                    cp.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+                    cr.style.transform = `translate(${e.clientX - 16}px, ${e.clientY - 16}px)`;
+                });
+                
+                document.addEventListener('mousedown', () => cr.style.transform += ' scale(0.7)');
+                document.addEventListener('mouseup', () => cr.style.transform += ' scale(1)');
+            },
+
+            spawnParticles() {
+                const container = document.getElementById('particle-container');
+                container.innerHTML = '';
+                const count = window.innerWidth / 20;
+                for(let i=0; i<count; i++) {
+                    const p = document.createElement('div');
+                    p.className = 'bubble';
+                    const size = Math.random() * 15 + 2;
+                    p.style.cssText = `
+                        position: absolute;
+                        bottom: -20px;
+                        left: ${Math.random() * 100}%;
+                        width: ${size}px; height: ${size}px;
+                        background: rgba(0, 242, 255, ${Math.random() * 0.3});
+                        border-radius: 50%;
+                        animation: bubbleRise ${Math.random() * 10 + 5}s infinite ease-in;
+                        animation-delay: ${Math.random() * 5}s;
+                    `;
+                    container.appendChild(p);
+                }
+            },
+
+            next(curr, nextStep) {
+                const panel = document.getElementById(`p${curr}`);
+                const inputs = panel.querySelectorAll('input, select');
+                let valid = true;
+
+                inputs.forEach(i => {
+                    if(!i.checkValidity()) {
+                        i.classList.add('invalid');
+                        valid = false;
+                        setTimeout(() => i.classList.remove('invalid'), 500);
+                    } else {
+                        this.data[i.id] = i.value;
+                    }
+                });
+
+                if(valid) {
+                    this.transition(nextStep);
+                }
+            },
+
+            transition(step) {
+                document.querySelectorAll('.os-panel').forEach(p => p.classList.remove('active'));
+                document.getElementById(`p${step}`).classList.add('active');
+                
+                document.querySelectorAll('.nav-link').forEach((n, i) => {
+                    n.classList.remove('active', 'done');
+                    if(i+1 === step) n.classList.add('active');
+                    if(i+1 < step) n.classList.add('done');
+                });
+            },
+
+            verifyQuiz() {
+                const ans = document.getElementById('in-quiz').value;
+                if(ans === "40") {
+                    this.renderFinal();
+                    this.transition(6);
+                } else {
+                    document.getElementById('in-quiz').classList.add('invalid');
+                }
+            },
+
+            renderFinal() {
+                document.getElementById('res-name').innerText = this.data['in-name'];
+                document.getElementById('res-dept').innerText = document.getElementById('in-dept').value;
+                document.getElementById('res-city').innerText = this.data['in-city'];
+                document.getElementById('res-age').innerText = this.data['in-age'];
+                document.getElementById('id-char').innerText = this.data['in-name'].charAt(0).toUpperCase();
+            },
+
+            download() {
+                const el = document.getElementById('id-card');
+                const opt = {
+                    margin: 1,
+                    filename: 'DS_Quantum_ID.pdf',
+                    image: { type: 'jpeg', quality: 1 },
+                    html2canvas: { scale: 4, backgroundColor: '#00040a', useCORS: true },
+                    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+                };
+                html2pdf().set(opt).from(el).save();
+            }
+        };
+
+        // Keyframe for bubbles injected via JS for dynamic control
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes bubbleRise {
+                0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+                20% { opacity: 0.5; }
+                100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        App.init();
+    </script>
+</body>
+</html>
